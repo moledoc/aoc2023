@@ -75,12 +75,15 @@ char *lex_bufferize(FILE *stream, size_t *buf_counter) {
 		buf = calloc(LEX_SIZE, sizeof(char));
 		char c;
 		size_t i = 0;
-		while ((c = fgetc(stream)) != EOF) {
+		while (c = fgetc(stream)) {
 			buf[i] = c;
 			++i;
 			if (i >= size) {
 				size += LEX_SIZE;
 				buf = realloc(buf, size);
+			}
+			if (c == EOF) {
+				break;
 			}
 		}
 		*buf_counter = i;
