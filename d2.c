@@ -89,6 +89,25 @@ int e1(game *gs, int nr_of_games) {
 	return sum;
 }
 
+int e2(game *gs, int nr_of_games) {
+	int sum = 0;
+	for (int i=0; i<nr_of_games; ++i) {
+		int pow[3] = {0, 0, 0};
+		game g = gs[i];
+		int valid_count = 0;
+		for (int j=0; j<SET_COUNT; ++j) {
+			for (int k=0; k<3; ++k) {
+				int count = gs[i].sets[j][k];
+				if (pow[k] < count) {
+					pow[k] = count;
+				}
+			}
+		}
+		sum += pow[0] * pow[1] * pow[2];
+	}
+	return sum;
+}
+
 int main(void) {
 
 	size_t token_counter = 0;
@@ -133,5 +152,6 @@ int main(void) {
 	lex_free(tokens, token_counter);
 
 	printf("e1: %d\n", e1(gs, nr_of_games));
+	printf("e2: %d\n", e2(gs, nr_of_games));
 	return 0;
 }
