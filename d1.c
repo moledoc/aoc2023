@@ -1,8 +1,15 @@
-#define LEX_IMPLEMENTATION
-#include "./lex.h"
+#include <stdio.h>
+#include <stdlib.h>
+
+void mymemset(char *dest, char c, size_t len) {
+	for (int i=0; i<len; ++i) {
+		dest[i] = c;
+	}
+}
 
 int e1(char *buf, size_t buf_counter) {
-	char *w = calloc(3, sizeof(char));
+	char w[3];
+	mymemset(w, '\0', 3);
 	int j = 0;
 	int sum = 0;
 	for (int i=0; i<buf_counter; ++i) {
@@ -21,7 +28,6 @@ int e1(char *buf, size_t buf_counter) {
 			w[0] = '0';
 		}
 	}
-	free(w);
 	return sum;
 }
 
@@ -43,7 +49,8 @@ int e2(char *buf, size_t buf_counter) {
 	char mapping[10][6] = {"zero\0", "one\0", "two\0", "three\0", "four\0", "five\0", "six\0", "seven\0", "eight\0", "nine\0",};
 	int mapping_lens[10] = {4, 3, 3, 5, 4, 4, 3, 5, 5, 4};
 
-	char *w = calloc(3, sizeof(char));
+	char w[3];
+	mymemset(w, '\0', 3);
 	int j = 0;
 	int sum = 0;
 	for (int i=0; i<buf_counter; ++i) {
@@ -69,20 +76,21 @@ int e2(char *buf, size_t buf_counter) {
 			}
 		}
 	}
-	free(w);
 	return sum;
 }
 
 int main(void) {
 	char *fname = "d1.in";
 	FILE *fptr = fopen(fname, "r");
-	LEX_FNAME = fname;
-	size_t buf_counter = 0;
-	char *buf = lex_bufferize(fptr, &buf_counter);
-	fclose(fptr);
+	fseek(fptr, 0L, SEEK_END);
+	long buf_counter = ftell(fptr) + 1; // +1 to count EOF
+	char buf[buf_counter];
+	rewind(fptr);
+	for (int i=0; i<buf_counter+1;++i) {
+		buf[i] = fgetc(fptr);
+	}
 
 	printf("e1: %d\n", e1(buf, buf_counter));
 	printf("e2: %d\n", e2(buf, buf_counter));
 
-	free(buf);
 }
