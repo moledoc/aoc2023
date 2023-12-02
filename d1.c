@@ -80,7 +80,7 @@ int e2(char *buf, size_t buf_counter) {
 }
 
 int main(void) {
-	char *fname = "d1.in";
+	char *fname = "./inputs/d1.in";
 	FILE *fptr = fopen(fname, "r");
 	fseek(fptr, 0L, SEEK_END);
 	long buf_counter = ftell(fptr) + 1; // +1 to count EOF
