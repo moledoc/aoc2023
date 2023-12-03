@@ -5,14 +5,15 @@
 //  left *  right (w * e)
 // bottom (sw s se)
 
+void zero_v(lex_token *tok) {
+	char *zero = malloc(1*sizeof(char));
+	*zero = '0';
+	char *me = tok->v;
+	free(me);
+	tok->v = zero;
+}
+
 int _e1(lex_token **grid, int rows, int cols) {
-	void zero_v(lex_token *tok) {
-		char *zero = malloc(1*sizeof(char));
-		*zero = '0';
-		char *me = tok->v;
-		free(me);
-		tok->v = zero;
-	}
 	int rc = rows*cols;
 	int sum = 0;
 	int j;
@@ -50,13 +51,6 @@ int _e1(lex_token **grid, int rows, int cols) {
 }
 
 int _e2(lex_token **grid, int rows, int cols) {
-	void zero_v(lex_token *tok) {
-		char *zero = malloc(1*sizeof(char));
-		*zero = '0';
-		char *me = tok->v;
-		free(me);
-		tok->v = zero;
-	}
 	int rc = rows*cols;
 	int sum = 0;
 	int j;
