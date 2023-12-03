@@ -5,7 +5,7 @@
 //  left *  right (w * e)
 // bottom (sw s se)
 
-int e1(lex_token **grid, int rows, int cols) {
+int _e1(lex_token **grid, int rows, int cols) {
 	void zero_v(lex_token *tok) {
 		char *zero = malloc(1*sizeof(char));
 		*zero = '0';
@@ -49,7 +49,7 @@ int e1(lex_token **grid, int rows, int cols) {
 	return sum;
 }
 
-int e2(lex_token **grid, int rows, int cols) {
+int _e2(lex_token **grid, int rows, int cols) {
 	void zero_v(lex_token *tok) {
 		char *zero = malloc(1*sizeof(char));
 		*zero = '0';
@@ -115,9 +115,8 @@ int e2(lex_token **grid, int rows, int cols) {
 	return sum;
 }
 
-int main(void) {
+int e1(char *fname) {
 	size_t token_count = 0;
-	char *fname = "./inputs/d3.in";
 	FILE *fptr = fopen(fname, "r");
 	LEX_FNAME = fname;
 	lex_token **tokens = lex_tokenize(fptr, &token_count);
@@ -134,7 +133,7 @@ int main(void) {
 			cols += tokens[i]->vlen;
 		}
 	}
-	printf("rows: %d cols: %d\n", rows, cols);
+	// printf("rows: %d cols: %d\n", rows, cols);
 
 	// mk grid
 	lex_token **grid = malloc(rows * cols * sizeof(lex_token *));
@@ -164,10 +163,72 @@ int main(void) {
 	}
 	// print_grid(grid, rows, cols);
 
-	// printf("e1: %d\n", e1(grid, rows, cols));
-	printf("e2: %d\n", e2(grid, rows, cols));
+	int sum = _e1(grid, rows, cols);
 
 	// lex_print(tokens, token_count);
 	lex_free(tokens, token_count);
 	free(grid);
+	return sum;
+}
+
+int e2(char *fname) {
+	size_t token_count = 0;
+	FILE *fptr = fopen(fname, "r");
+	LEX_FNAME = fname;
+	lex_token **tokens = lex_tokenize(fptr, &token_count);
+	fclose(fptr);
+
+	int rows = 0;
+	int cols = 0;
+	for (int i=0; i<token_count; ++i){
+		if (*tokens[i]->v == '\n' || *tokens[i]->v == EOF) {
+			++rows;
+			continue;
+		}
+		if (rows == 0) {
+			cols += tokens[i]->vlen;
+		}
+	}
+	// printf("rows: %d cols: %d\n", rows, cols);
+
+	// mk grid
+	lex_token **grid = malloc(rows * cols * sizeof(lex_token *));
+	int r = 0;
+	int c = 0;
+	for (int i=0; i<token_count; ++i){
+		lex_token *tok = tokens[i];
+		if (*tok->v == '\n' || *tok->v == EOF) {
+			++r;
+			c = 0;
+			continue;
+		}
+		for (int j=0; j<tok->vlen; ++j) {
+			grid[r*cols + (c+j)] = tok;
+		}
+		c += tok->vlen;
+	}
+
+	// print grid
+	void print_grid(lex_token **grid, int rows, int cols) {
+		for (int i=0; i<rows*cols; ++i) {
+			if (i % cols == 0) {
+				putchar('\n');
+			}
+			printf("%s ", grid[i]->v);
+		}
+	}
+	// print_grid(grid, rows, cols);
+
+	int sum = _e2(grid, rows, cols);
+
+	// lex_print(tokens, token_count);
+	lex_free(tokens, token_count);
+	free(grid);
+	return sum;
+}
+
+int main(void) {
+	char *fname = "./inputs/d3.in";
+	printf("e2: %d\n", e1(fname));
+	printf("e2: %d\n", e2(fname));
 }
