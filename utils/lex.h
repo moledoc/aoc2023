@@ -15,11 +15,11 @@ enum LEX_TOKEN_TYPE {
 };
 
 static const char *LEX_TOKEN_NAMES[] = {
-	"SYMBOL",
-	"WORD",
-	"INT",
-	"CHAR",
-	"STRING"
+	"LEX_SYMBOL",
+	"LEX_WORD",
+	"LEX_INT",
+	"LEX_CHAR",
+	"LEX_STRING"
 };
 
 typedef struct {
