@@ -1,9 +1,9 @@
 #define LEX_IMPLEMENTATION
 #include "./utils/lex.h"
 
-// nw n ne
-//  w x  e
-// sw s se
+// top (nw n ne)
+//  left *  right (w * e)
+// bottom (sw s se)
 
 int e1(lex_token **grid, int rows, int cols) {
 	void zero_v(lex_token *tok) {
@@ -20,48 +20,97 @@ int e1(lex_token **grid, int rows, int cols) {
 		if (grid[i]->t == LEX_INT || *grid[i]->v == '.') {
 			continue;
 		}
-		// is symbol and not dot
 		// mark values as "0" to not count one part multiple times
-		// w
+		// left
 		if ((j=i-1) > 0 && grid[j]->t == LEX_INT) {
 			sum += atoi(grid[j]->v);
 			zero_v(grid[j]);
 		}
-		// e
+		// right
 		if ((j=i+1) < rc && grid[j]->t == LEX_INT) {
 			sum += atoi(grid[j]->v);
 			zero_v(grid[j]);
 		}
-		// n
-		if ((j=i-cols) > 0 && grid[j]->t == LEX_INT) {
-			sum += atoi(grid[j]->v);
+		// top
+		for (int k=1; k>=-1; --k) {
+			if ((j=i-cols+k) > 0 && grid[j]->t == LEX_INT) {
+				sum += atoi(grid[j]->v);
+				zero_v(grid[j]);
+			}
+		}
+		// bottom
+		for (int k=1; k>=-1; --k) {
+			if ((j=i+cols+k) < rc && grid[j]->t == LEX_INT) {
+				sum += atoi(grid[j]->v);
+				zero_v(grid[j]);
+			}
+		}
+	}
+	return sum;
+}
+
+int e2(lex_token **grid, int rows, int cols) {
+	void zero_v(lex_token *tok) {
+		char *zero = malloc(1*sizeof(char));
+		*zero = '0';
+		char *me = tok->v;
+		free(me);
+		tok->v = zero;
+	}
+	int rc = rows*cols;
+	int sum = 0;
+	int j;
+	int adj_parts = 0;
+	for (int i=0; i<rc; ++i) {
+		if (grid[i]->t == LEX_INT || *grid[i]->v == '.') {
+			continue;
+		}
+		int mul = 1;
+		// mark values as "0" to not count part multiple times
+		// left
+		if ((j=i-1) > 0 && grid[j]->t == LEX_INT) {
+			int v = atoi(grid[j]->v);
+			mul *= v ? v : 1;
+			if (v) {
+				++adj_parts;
+			}
 			zero_v(grid[j]);
 		}
-		// nw
-		if ((j=i-cols-1) > 0 && grid[j]->t == LEX_INT) {
-			sum += atoi(grid[j]->v);
+		// right
+		if ((j=i+1) < rc && grid[j]->t == LEX_INT) {
+			int v = atoi(grid[j]->v);
+			mul *= v ? v : 1;
+			if (v) {
+				++adj_parts;
+			}
 			zero_v(grid[j]);
 		}
-		// ne
-		if ((j=i-cols+1) > 0 && grid[j]->t == LEX_INT) {
-			sum += atoi(grid[j]->v);
-			zero_v(grid[j]);
+		// top
+		for (int k=1; k>=-1; --k) {
+			if ((j=i-cols+k) > 0 && grid[j]->t == LEX_INT) {
+				int v = atoi(grid[j]->v);
+				mul *= v ? v : 1;
+				if (v) {
+					++adj_parts;
+				}
+				zero_v(grid[j]);
+			}
 		}
-		// s
-		if ((j=i+cols) < rc && grid[j]->t == LEX_INT) {
-			sum += atoi(grid[j]->v);
-			zero_v(grid[j]);
+		// bottom
+		for (int k=1; k>=-1; --k) {
+			if ((j=i+cols+k) < rc && grid[j]->t == LEX_INT) {
+				int v = atoi(grid[j]->v);
+				mul *= v ? v : 1;
+				if (v) {
+					++adj_parts;
+				}
+				zero_v(grid[j]);
+			}
 		}
-		// sw
-		if ((j=i+cols-1) < rc && grid[j]->t == LEX_INT) {
-			sum += atoi(grid[j]->v);
-			zero_v(grid[j]);
+		if (adj_parts == 2) {
+			sum += mul;
 		}
-		// se
-		if ((j=i+cols+1) < rc && grid[j]->t == LEX_INT) {
-			sum += atoi(grid[j]->v);
-			zero_v(grid[j]);
-		}
+		adj_parts = 0;
 	}
 	return sum;
 }
@@ -115,8 +164,8 @@ int main(void) {
 	}
 	// print_grid(grid, rows, cols);
 
-	printf("e1: %d\n", e1(grid, rows, cols));
-	// printf("e2: %d\n", e2(tokens, token_count));
+	// printf("e1: %d\n", e1(grid, rows, cols));
+	printf("e2: %d\n", e2(grid, rows, cols));
 
 	// lex_print(tokens, token_count);
 	lex_free(tokens, token_count);
