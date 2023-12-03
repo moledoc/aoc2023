@@ -115,7 +115,7 @@ int _e2(lex_token **grid, int rows, int cols) {
 	return sum;
 }
 
-int e1(char *fname) {
+void prep(char *fname, lex_token ***ret_tokens, size_t *ret_token_count, lex_token ***ret_grid, int *ret_rows, int *ret_cols) {
 	size_t token_count = 0;
 	FILE *fptr = fopen(fname, "r");
 	LEX_FNAME = fname;
@@ -162,9 +162,21 @@ int e1(char *fname) {
 		}
 	}
 	// print_grid(grid, rows, cols);
+	(*ret_tokens) = tokens;
+	(*ret_token_count) = token_count;
+	(*ret_grid) = grid;
+	(*ret_rows) = rows;
+	(*ret_cols) = cols;
+}
 
+int e1(char *fname) {
+	lex_token **tokens;
+	size_t token_count;
+	lex_token **grid;
+	int rows;
+	int cols;
+	prep(fname, &tokens, &token_count, &grid, &rows, &cols);
 	int sum = _e1(grid, rows, cols);
-
 	// lex_print(tokens, token_count);
 	lex_free(tokens, token_count);
 	free(grid);
@@ -172,55 +184,13 @@ int e1(char *fname) {
 }
 
 int e2(char *fname) {
-	size_t token_count = 0;
-	FILE *fptr = fopen(fname, "r");
-	LEX_FNAME = fname;
-	lex_token **tokens = lex_tokenize(fptr, &token_count);
-	fclose(fptr);
-
-	int rows = 0;
-	int cols = 0;
-	for (int i=0; i<token_count; ++i){
-		if (*tokens[i]->v == '\n' || *tokens[i]->v == EOF) {
-			++rows;
-			continue;
-		}
-		if (rows == 0) {
-			cols += tokens[i]->vlen;
-		}
-	}
-	// printf("rows: %d cols: %d\n", rows, cols);
-
-	// mk grid
-	lex_token **grid = malloc(rows * cols * sizeof(lex_token *));
-	int r = 0;
-	int c = 0;
-	for (int i=0; i<token_count; ++i){
-		lex_token *tok = tokens[i];
-		if (*tok->v == '\n' || *tok->v == EOF) {
-			++r;
-			c = 0;
-			continue;
-		}
-		for (int j=0; j<tok->vlen; ++j) {
-			grid[r*cols + (c+j)] = tok;
-		}
-		c += tok->vlen;
-	}
-
-	// print grid
-	void print_grid(lex_token **grid, int rows, int cols) {
-		for (int i=0; i<rows*cols; ++i) {
-			if (i % cols == 0) {
-				putchar('\n');
-			}
-			printf("%s ", grid[i]->v);
-		}
-	}
-	// print_grid(grid, rows, cols);
-
+	lex_token **tokens;
+	size_t token_count;
+	lex_token **grid;
+	int rows;
+	int cols;
+	prep(fname, &tokens, &token_count, &grid, &rows, &cols);
 	int sum = _e2(grid, rows, cols);
-
 	// lex_print(tokens, token_count);
 	lex_free(tokens, token_count);
 	free(grid);
