@@ -107,11 +107,10 @@ int e2(lex_token **tokens, size_t token_count) {
 		}
 		// add to copies
 		for (int k=0; k<match_count; ++k) {
-			copies[j+1+k] += 1 + copies[j]; // 1 original + copies[j] new cards
+			copies[j+1+k] += 1 + copies[j]; // win copies from 1 original and copies[j] copies
 		}
 		// add current line copies to cards;
-		cards_count += copies[j]; // original + copies;
-		// printf("line: %d, matching: %d, copies: %d, cards: %d\n", j+1, match_count, copies[j], cards_count);
+		cards_count += copies[j];
 		++j;
 		// check end of file
 		if (*(*tokens)->v == EOF) {
