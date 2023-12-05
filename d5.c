@@ -9,24 +9,6 @@ void zero(int *arr, size_t size) {
 	}
 }
 
-void parr(int *arr, size_t size) {
-	for (int i=0; i<size; ++i) {
-		printf("%d ", arr[i]);
-	}
-	putchar('\n');
-}
-
-void pmap(int map[][3]) {
-	for (int i=0; i<MAP_SIZE; ++i) {
-		printf("%d: ", i);
-		for (int j=0; j<3; ++j) {
-			printf("%d ", map[i][j]);
-		}
-		putchar('\n');
-	}
-	putchar('\n');
-}
-
 int skip_line(lex_token **tokens, int offset) {
 	lex_token *tok;
 	while (*(tok = tokens[offset])->v != '\n' && *tok->v != EOF) {
@@ -191,30 +173,15 @@ int main(void) {
 	int mappings[7][MAP_SIZE][3];
 
 	offset = get_mapping(tokens, offset, mappings[0]);
-	// pmap(mappings[0]);
-
 	offset = get_mapping(tokens, offset, mappings[1]);
-	// pmap(mappings[1]);
-
 	offset = get_mapping(tokens, offset, mappings[2]);
-	// pmap(mappings[2]);
-
 	offset = get_mapping(tokens, offset, mappings[3]);
-	// pmap(mappings[3]);
-
 	offset = get_mapping(tokens, offset, mappings[4]);
-	// pmap(mappings[3]);
-
 	offset = get_mapping(tokens, offset, mappings[5]);
-	// pmap(mappings[4]);
-
 	offset = get_mapping(tokens, offset, mappings[6]);
-	// pmap(mappings[5]);
-
 
 	printf("e1: %d\n", e1(mappings, seeds, seed_count));
 	printf("e2: %d\n", e2(mappings, seeds, seed_count));
 
-	// lex_print(tokens, token_count);
 	lex_free(tokens, token_count);
 }
