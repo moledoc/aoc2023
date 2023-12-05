@@ -67,7 +67,7 @@ int e1(int mappings[7][MAP_SIZE][3], int seeds[], size_t seed_count) {
 	int lowest = ((int)1 << 30);
 	void follow(int mappings[7][MAP_SIZE][3], int m_id, int MAP_SIZE, int val, int *lowest) {
 		if (m_id == 7) {
-			if (*lowest > val && val > 0) { // BUG: without 'val > 0' I got an int overflow. with this got correct value though, so yeah.
+			if (*lowest > val && val > 0) { // MAYBE: BUG: check for overflow for 'val'
 				*lowest = val;
 			}
 			return;
@@ -92,6 +92,60 @@ int e1(int mappings[7][MAP_SIZE][3], int seeds[], size_t seed_count) {
 		follow(mappings, 0, MAP_SIZE, seeds[i], &lowest);
 	}
 	return lowest;
+}
+
+int e2(int mappings[7][MAP_SIZE][3], int seeds[], size_t seed_count) {
+	int min(int a, int b) {
+		if (a < b) {
+			return a;
+		}
+		return b;
+	}
+	int max(int a, int b) {
+		if (a > b) {
+			return a;
+		}
+		return b;
+	}
+	int lowest = ((int)1 << 30);
+	void follow(int mappings[7][MAP_SIZE][3], int m_id, int MAP_SIZE, int val_range[2], int *lowest) {
+		if (m_id == 7) {
+			// beginning of range is the smallest
+			if (*lowest > val_range[0] && val_range[0] > 0) { // MAYBE: BUG: check for overflow for 'val'
+				*lowest = val_range[0];
+			}
+			return;
+		}
+		int in_range = 0;
+		for (int i=0; i<MAP_SIZE; ++i) {
+			if (mappings[m_id][i][0] == 0 && mappings[m_id][i][1] == 0 && mappings[m_id][i][2] == 0) {
+				break;
+			}
+			// find range union
+			int infimum = max(val_range[0], mappings[m_id][i][1]);
+			int supremum = min(val_range[0] + val_range[1], mappings[m_id][i][1]+mappings[m_id][i][2]);
+			// range is invalid if union upper bound is smaller than lower bound
+			if (infimum <= supremum) {
+				in_range=1;
+				int nval_range[2];
+				nval_range[0]=mappings[m_id][i][0]+infimum-mappings[m_id][i][1];
+				nval_range[1]=supremum - infimum;
+				follow(mappings, m_id+1, MAP_SIZE, nval_range, lowest);
+			}
+		}
+		if (!in_range) {
+			follow(mappings, m_id+1, MAP_SIZE, val_range, lowest);
+		}
+	}
+
+	for (int i=0; i<seed_count; i+=2) {
+		int vr[2];
+		vr[0] = seeds[i];
+		vr[1] = seeds[i+1];
+		follow(mappings, 0, MAP_SIZE, vr, &lowest);
+	}
+	return lowest;
+
 }
 
 int main(void) {
@@ -127,6 +181,7 @@ int main(void) {
 	offset+=2; // skip extra new line
 	// parr(seeds, seed_count);
 
+	// legend:
 	// mappings[0] = seed_to_soil_map;
 	// mappings[1] = soil_to_fert_map;
 	// mappings[2] = fert_to_water_map;
@@ -158,6 +213,7 @@ int main(void) {
 
 
 	printf("e1: %d\n", e1(mappings, seeds, seed_count));
+	printf("e2: %d\n", e2(mappings, seeds, seed_count));
 
 	// lex_print(tokens, token_count);
 	lex_free(tokens, token_count);
