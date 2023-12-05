@@ -2,6 +2,7 @@
 #include "./utils/lex.h"
 
 int MAP_SIZE=100;
+int SEED_COUNT=20;
 
 void zero(int *arr, size_t size) {
 	for (int i=0; i<size; ++i) {
@@ -45,82 +46,52 @@ int get_mapping(lex_token **tokens, int offset, int map[MAP_SIZE][3]) {
 	return offset;
 }
 
-int e1(int mappings[7][MAP_SIZE][3], int seeds[], size_t seed_count) {
-	int lowest = ((int)1 << 30);
-	void follow(int mappings[7][MAP_SIZE][3], int m_id, int MAP_SIZE, int val, int *lowest) {
-		if (m_id == 7) {
-			if (*lowest > val && val > 0) { // MAYBE: BUG: check for overflow for 'val'
-				*lowest = val;
-			}
-			return;
+void follow(int mappings[7][MAP_SIZE][3], int m_id, int MAP_SIZE, int val_range[2], int *lowest) {
+	if (m_id == 7) {
+		// beginning of range is the smallest
+		if (*lowest > val_range[0] && val_range[0] > 0) { // BUG: int overflow somewhere, but doesn't affect solution
+			*lowest = val_range[0];
 		}
-		int in_range = 0;
-		for (int i=0; i<MAP_SIZE; ++i) {
-			if (mappings[m_id][i][0] == 0 && mappings[m_id][i][1] == 0 && mappings[m_id][i][2] == 0) {
-				break;
-			}
-			if (mappings[m_id][i][1] <= val && val <= mappings[m_id][i][1]+mappings[m_id][i][2]) {
-				in_range = 1;
-				int nval = mappings[m_id][i][0] + (val - mappings[m_id][i][1]);
-				follow(mappings, m_id+1, MAP_SIZE, nval, lowest);
-			}
+		return;
+	}
+	int in_range = 0;
+	for (int i=0; i<MAP_SIZE; ++i) {
+		if (mappings[m_id][i][0] == 0 && mappings[m_id][i][1] == 0 && mappings[m_id][i][2] == 0) {
+			break;
 		}
-		if (!in_range) {
-			follow(mappings, m_id+1, MAP_SIZE, val, lowest);
+		// find range union
+		int infimum = val_range[0] > mappings[m_id][i][1] ? val_range[0] : mappings[m_id][i][1];
+		int val_range_upper = val_range[0] + val_range[1];
+		int cur_mappings_upper = mappings[m_id][i][1]+mappings[m_id][i][2];
+		int supremum = val_range_upper < cur_mappings_upper ? val_range_upper : cur_mappings_upper;
+		// range is invalid if union upper bound is smaller than lower bound
+		if (infimum <= supremum) {
+			in_range=1;
+			int nval_range[2];
+			nval_range[0]=mappings[m_id][i][0]+infimum-mappings[m_id][i][1];
+			nval_range[1]=supremum - infimum;
+			follow(mappings, m_id+1, MAP_SIZE, nval_range, lowest);
 		}
 	}
+	if (!in_range) {
+		follow(mappings, m_id+1, MAP_SIZE, val_range, lowest);
+	}
+}
 
-	for (int i=0; i<seed_count; ++i) {
-		follow(mappings, 0, MAP_SIZE, seeds[i], &lowest);
+int e1(int mappings[7][MAP_SIZE][3], int seeds[]) {
+	int lowest = ((int)1 << 30);
+	for (int i=0; i<SEED_COUNT; ++i) {
+		int vr[2];
+		vr[0] = seeds[i];
+		vr[1] = 1;
+		follow(mappings, 0, MAP_SIZE, vr, &lowest);
 	}
 	return lowest;
 }
 
-int e2(int mappings[7][MAP_SIZE][3], int seeds[], size_t seed_count) {
-	int min(int a, int b) {
-		if (a < b) {
-			return a;
-		}
-		return b;
-	}
-	int max(int a, int b) {
-		if (a > b) {
-			return a;
-		}
-		return b;
-	}
+int e2(int mappings[7][MAP_SIZE][3], int seeds[]) {
 	int lowest = ((int)1 << 30);
-	void follow(int mappings[7][MAP_SIZE][3], int m_id, int MAP_SIZE, int val_range[2], int *lowest) {
-		if (m_id == 7) {
-			// beginning of range is the smallest
-			if (*lowest > val_range[0] && val_range[0] > 0) { // MAYBE: BUG: check for overflow for 'val'
-				*lowest = val_range[0];
-			}
-			return;
-		}
-		int in_range = 0;
-		for (int i=0; i<MAP_SIZE; ++i) {
-			if (mappings[m_id][i][0] == 0 && mappings[m_id][i][1] == 0 && mappings[m_id][i][2] == 0) {
-				break;
-			}
-			// find range union
-			int infimum = max(val_range[0], mappings[m_id][i][1]);
-			int supremum = min(val_range[0] + val_range[1], mappings[m_id][i][1]+mappings[m_id][i][2]);
-			// range is invalid if union upper bound is smaller than lower bound
-			if (infimum <= supremum) {
-				in_range=1;
-				int nval_range[2];
-				nval_range[0]=mappings[m_id][i][0]+infimum-mappings[m_id][i][1];
-				nval_range[1]=supremum - infimum;
-				follow(mappings, m_id+1, MAP_SIZE, nval_range, lowest);
-			}
-		}
-		if (!in_range) {
-			follow(mappings, m_id+1, MAP_SIZE, val_range, lowest);
-		}
-	}
-
-	for (int i=0; i<seed_count; i+=2) {
+	for (int i=0; i<SEED_COUNT; i+=2) {
 		int vr[2];
 		vr[0] = seeds[i];
 		vr[1] = seeds[i+1];
@@ -139,20 +110,10 @@ int main(void) {
 	fclose(fptr);
 
 	lex_token *tok;
-	int seed_count = 0;
 	int offset = 0;
-	while (*(tok = tokens[offset])->v != '\n') {
-		if (tok->t == LEX_INT) {
-			++seed_count;
-		}
-		++offset;
-	}
-
-
-	offset = 0; // reset offset
-	int seeds[seed_count];
+	int seeds[SEED_COUNT];
 	int j = 0;
-	zero(seeds, seed_count);
+	zero(seeds, SEED_COUNT);
 	while (*(tok = tokens[offset])->v != '\n') {
 		if (tok->t == LEX_INT) {
 			seeds[j] = atoi(tok->v);
@@ -161,27 +122,17 @@ int main(void) {
 		++offset;
 	}
 	offset+=2; // skip extra new line
-	// parr(seeds, seed_count);
+	SEED_COUNT = j; // trim SEED_COUNT to match the actual count
 
 	// legend:
-	// mappings[0] = seed_to_soil_map;
-	// mappings[1] = soil_to_fert_map;
-	// mappings[2] = fert_to_water_map;
-	// mappings[3] = water_to_light_map;
-	// mappings[4] = light_to_temp_map;
-	// mappings[5] = temp_to_hum_map;
+	// 0:seed_to_soil_map; 1:soil_to_fert_map; 2:fert_to_water_map; 3:water_to_light_map; 4:light_to_temp_map; 5:temp_to_hum_map; 6:hum_to_loc_map
 	int mappings[7][MAP_SIZE][3];
 
-	offset = get_mapping(tokens, offset, mappings[0]);
-	offset = get_mapping(tokens, offset, mappings[1]);
-	offset = get_mapping(tokens, offset, mappings[2]);
-	offset = get_mapping(tokens, offset, mappings[3]);
-	offset = get_mapping(tokens, offset, mappings[4]);
-	offset = get_mapping(tokens, offset, mappings[5]);
-	offset = get_mapping(tokens, offset, mappings[6]);
-
-	printf("e1: %d\n", e1(mappings, seeds, seed_count));
-	printf("e2: %d\n", e2(mappings, seeds, seed_count));
+	for (int i=0; i<7; ++i) {
+		offset = get_mapping(tokens, offset, mappings[i]);
+	}
+	printf("e1: %d\n", e1(mappings, seeds));
+	printf("e2: %d\n", e2(mappings, seeds));
 
 	lex_free(tokens, token_count);
 }
