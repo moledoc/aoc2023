@@ -28,8 +28,6 @@ void prep(lex_token **tokens, unsigned long long races[RACE_COUNT][2]) {
 		}
 		++offset;
 	}
-	RACE_COUNT = race; // correct RACE_COUNT to actual race count
-
 }
 
 int e1(unsigned long long races[RACE_COUNT][2]) {
@@ -41,9 +39,13 @@ int e1(unsigned long long races[RACE_COUNT][2]) {
 
 		long double sqrt_a = pow(races[i][0],2)-4*races[i][1];
 		long double sqrt_v = sqrt(sqrt_a);
+		
+		// extract common calculations
+		long double xa = (long double)races[i][0]/(long double)2;
+		long double sv2 = sqrt_v/(long double)2;
 
-		int low = floor((long double)races[i][0]/(long double)2-sqrt_v/(long double)2);
-		int up = ceil((long double)races[i][0]/(long double)2+sqrt_v/(long double)2-1); // -1 for error correction
+		int low = floor(xa-sv2);
+		int up = ceil(xa+sv2-1); // -1 for error correction
 
 		err_marg *= up-low;
 	}
