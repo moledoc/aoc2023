@@ -46,6 +46,7 @@ lex_token **lex_tokenize(FILE *stream, size_t *token_counter);
 
 #define LEX_SIZE 256*sizeof(char)
 char *LEX_FNAME = "stdin";
+int LEX_SKIP_WHITESPACE=0;
 
 void lex_free(lex_token **tokens, size_t n) {
 	for (int i=0; i<n; ++i) {
@@ -76,6 +77,9 @@ char *lex_bufferize(FILE *stream, size_t *buf_counter) {
 		char c;
 		size_t i = 0;
 		while (c = fgetc(stream)) {
+			if (LEX_SKIP_WHITESPACE && (c == ' ' || c == '\t')) {
+				continue;
+			}
 			buf[i] = c;
 			++i;
 			if (i >= size) {

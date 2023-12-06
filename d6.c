@@ -4,7 +4,7 @@
 
 int RACE_COUNT=4;
 
-void zero(int arr[RACE_COUNT][2]) {
+void zero(unsigned long long arr[RACE_COUNT][2]) {
 	for (int i=0; i<RACE_COUNT; ++i) {
 		for (int j=0; j<2; ++j) {
 			arr[i][j] = 0;
@@ -12,32 +12,7 @@ void zero(int arr[RACE_COUNT][2]) {
 	}
 }
 
-int e1(int races[RACE_COUNT][2]) {
-	int err_marg=1;
-	for (int i=0; i<RACE_COUNT; ++i) {
-		if (races[i][0] == 0 && races[i][1] == 0) {
-			break;
-		}
-		float sqrt_a = pow(races[i][0],2)-4*races[i][1];
-		float sqrt_v = sqrt(sqrt_a);
-		int low = (int)(-races[i][0]+sqrt_v)/(-2);
-		int up = (int)(-races[i][0]-sqrt_v)/(-2);
-		int correction = races[i][0]-up-low-1; // account for trunc residual and 'greater than' condition
-		// printf("---- %d: %d %d\n", up-low+correction, up, low);
-		err_marg *= up-low+correction;
-	}
-	return err_marg;
-}
-
-int main(void) {
-	char *fname = "./inputs/d6.in";
-	LEX_FNAME = fname;
-	FILE *fptr = fopen(fname, "r");
-	size_t token_count = 0;
-	lex_token **tokens = lex_tokenize(fptr, &token_count);
-	fclose(fptr);
-
-	int races[RACE_COUNT][2];
+void prep(lex_token **tokens, unsigned long long races[RACE_COUNT][2]) {
 	zero(races);
 	int offset = 0;
 	int line = 0;
@@ -48,16 +23,46 @@ int main(void) {
 			race = 0;
 		}
 		if (tokens[offset]->t == LEX_INT) {
-			races[race][line] = atoi(tokens[offset]->v);
+			races[race][line] = strtoull(tokens[offset]->v, NULL, 10);
 			++race;
 		}
 		++offset;
 	}
-	for (int i=0;i<RACE_COUNT;++i) {
-		// printf("%d %d\n", races[i][0], races[i][1]);
-	}
-	printf("e1: %d\n", e1(races));
-// 	printf("e2: %d\n", e2(races));
+	RACE_COUNT = race; // correct RACE_COUNT to actual race count
 
-	lex_free(tokens, token_count);
+}
+
+int e1(unsigned long long races[RACE_COUNT][2]) {
+	int err_marg=1;
+	for (int i=0; i<RACE_COUNT; ++i) {
+		if (races[i][0] == 0 && races[i][1] == 0) {
+			break;
+		}
+
+		long double sqrt_a = pow(races[i][0],2)-4*races[i][1];
+		long double sqrt_v = sqrt(sqrt_a);
+
+		int low = floor((long double)races[i][0]/(long double)2-sqrt_v/(long double)2);
+		int up = ceil((long double)races[i][0]/(long double)2+sqrt_v/(long double)2-1); // -1 for error correction
+
+		err_marg *= up-low;
+	}
+	return err_marg;
+}
+
+int main(void) {
+	char *fname = "./inputs/d6.in";
+	LEX_FNAME = fname;
+	for (int i=0; i<2; ++i) {
+		FILE *fptr = fopen(fname, "r");
+		size_t token_count = 0;
+		LEX_SKIP_WHITESPACE=i;
+		lex_token **tokens = lex_tokenize(fptr, &token_count);
+		fclose(fptr);
+
+		unsigned long long races[RACE_COUNT][2];
+		prep(tokens, races);
+		printf("e%d: %d\n",i+1, e1(races));
+		lex_free(tokens, token_count);
+	}
 }
