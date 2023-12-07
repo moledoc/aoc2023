@@ -3,6 +3,8 @@
 
 // eeem... not good
 
+// general approach: ordered linked list per each hand type.
+
 typedef struct play {
 	int typ;
 	char hand[6];
@@ -76,16 +78,16 @@ int ex(char *buf, size_t count, int e) {
 		hand[5] = '\0';
 
 		play *p = calloc(1, sizeof(play));
-	
+		// translate labels to more convenient chars to work with
 		for (int j=0; j<5; ++j) {
 			char c = buf[i+j];
 			switch (c) {
 			case 'T':
 				c='9'+1; break;
 			case 'J':
-				if (e==0) {
+				if (e==1) {
 					c='9'+2; break;
-				} else if (e == 1) {
+				} else if (e == 2) {
 					c='1'; break;
 				}
 			case 'Q':
@@ -98,9 +100,10 @@ int ex(char *buf, size_t count, int e) {
 			p->hand[j] = c;
 			++typ[c-'0'];
 		}
+
 		// 0:highest; 1:one pair; 2:two pairs; 3:three of a kind; 4:full house; 5:four of a kind; 6:five of a kind;
-		// find p->typ
-		if (e == 1 && typ[1] > 0) { // handle jokers for ex2
+		// handle jokers for ex2 - inc the largest count by joker amount. Prefer larger value
+		if (e == 2 && typ[1] > 0) {
 			int biggest_count = 0;
 			int idx = 1;
 			for (int p=2; p<label_count; ++p) {
@@ -113,6 +116,7 @@ int ex(char *buf, size_t count, int e) {
 			typ[1] = 0;
 			typ[idx] += joker_count;
 		}
+		// find p->typ
 		for (int k=1; k<label_count; ++k) {
 			switch (typ[k]) {
 			case 1:
@@ -187,7 +191,7 @@ int main(void) {
 	fclose(fptr);
 	buf[count*sizeof(char)] = '\n'; // EOF->'\n'
 
-	for (int e=0; e<2; ++e){
-		printf("e%d: %llu\n", e+1, ex(buf, count, e));
+	for (int e=1; e<3; ++e){
+		printf("e%d: %d\n", e, ex(buf, count, e));
 	}
 }
