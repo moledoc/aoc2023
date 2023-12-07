@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
-//#include <string.h>
+
+// SPAGHETTI
 
 typedef struct play {
 	int typ;
@@ -71,14 +72,14 @@ void zero(int *arr, size_t size) {
 	}
 }
 
-
-int e1(play *ps[7]) {
+int ex(play *ps[7]) {
 	int rank = 1;
 	int winnings = 0;
 	for (int i=0; i<7; ++i) {
 		play *ps_i = ps[i];
 		while (ps_i) {
 			int j=0;
+			// printf("%d rank %d hand %s bid %d\n", i, rank, ps_i->hand, ps_i->bid);
 			winnings += rank * ps_i->bid;
 			++rank;
 			ps_i = ps_i->next;
@@ -86,6 +87,8 @@ int e1(play *ps[7]) {
 	}
 	return winnings;
 }
+
+
 
 int main(void) {
 	char *fname = "./inputs/d7.in";
@@ -98,6 +101,8 @@ int main(void) {
 	fclose(fptr);
 	// printf("read: %d, count: %d, content: %s\n", read_bytes, count, buf);
 	buf[count*sizeof(char)] = '\n'; // EOF->'\n'
+
+	for (int e=0; e<2; ++e){
 
 	play *ps[7];
 	for (int i=0;i<7;++i) {
@@ -120,7 +125,11 @@ int main(void) {
 			case 'T':
 				c='9'+1; break;
 			case 'J':
-				c='9'+2; break;
+				if (e==0) {
+					c='9'+2; break;
+				} else if (e == 1) {
+					c='1'; break;
+				}
 			case 'Q':
 				c='9'+3; break;
 			case 'K':
@@ -133,7 +142,20 @@ int main(void) {
 		}
 		// 0:highest; 1:one pair; 2:two pairs; 3:three of a kind; 4:full house; 5:four of a kind; 6:five of a kind;
 		// find p->typ
-		for (int k=0; k<label_count; ++k) {
+		if (e == 1 && typ[1] > 0) { // handle jokers for ex2
+			int biggest_count = 0;
+			int idx = 1;
+			for (int p=2; p<label_count; ++p) {
+				if (typ[p] >= biggest_count) { // >= so that J substitutes the biggest label
+					biggest_count =  typ[p];
+					idx = p;
+				}
+			}
+			int joker_count = typ[1];
+			typ[1] = 0;
+			typ[idx] += joker_count;
+		}
+		for (int k=1; k<label_count; ++k) {
 			switch (typ[k]) {
 			case 1:
 				continue; break;
@@ -178,8 +200,8 @@ int main(void) {
 	}
 
 	// play_print(ps);
-	printf("e1: %llu\n", e1(ps));
-
+	printf("e%d: %llu\n", e+1, ex(ps));
 	play_free(ps);
 
+	}
 }
