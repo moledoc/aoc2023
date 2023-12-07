@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-// SPAGHETTI
+// eeem... not good
 
 typedef struct play {
 	int typ;
@@ -55,62 +55,21 @@ void play_free(play *ps[7]) {
 	}
 }
 
-void play_print(play *ps[7]) {
-	for (int i=0; i<7; ++i) {
-		play *ps_i = ps[i];
-		while (ps_i) {
-			play *me = ps_i;
-			ps_i = ps_i->next;
-			printf("typ: %d, hand: %s, bid: %d\n", me->typ, me->hand, me->bid);
-		}
-	}
-}
-
 void zero(int *arr, size_t size) {
 	for (int i=0; i<size; ++i) {
 		arr[i] = 0;
 	}
 }
 
-int ex(play *ps[7]) {
-	int rank = 1;
-	int winnings = 0;
-	for (int i=0; i<7; ++i) {
-		play *ps_i = ps[i];
-		while (ps_i) {
-			int j=0;
-			// printf("%d rank %d hand %s bid %d\n", i, rank, ps_i->hand, ps_i->bid);
-			winnings += rank * ps_i->bid;
-			++rank;
-			ps_i = ps_i->next;
-		}
-	}
-	return winnings;
-}
-
-
-
-int main(void) {
-	char *fname = "./inputs/d7.in";
-	FILE *fptr = fopen(fname, "r");
-	fseek(fptr, 0, SEEK_END);
-	long count = ftell(fptr);
-	rewind(fptr);
-	char buf[count*sizeof(char)+1]; // +1 for EOF
-	size_t read_bytes = fread(buf, sizeof(char), count, fptr);
-	fclose(fptr);
-	// printf("read: %d, count: %d, content: %s\n", read_bytes, count, buf);
-	buf[count*sizeof(char)] = '\n'; // EOF->'\n'
-
-	for (int e=0; e<2; ++e){
-
+int ex(char *buf, size_t count, int e) {
 	play *ps[7];
 	for (int i=0;i<7;++i) {
 		ps[i] = NULL;
 	}
-	int label_count = 15;
+
+	int label_count = 15; // +1 extra for '1' and +1 for accounting diff between len and idx
 	for (int i=0; i<count; ++i) {
-		int typ[label_count]; // +1 extra for '1' and +1 for accounting diff between len and idx
+		int typ[label_count];
 		zero(typ, label_count);
 
 		char hand[6];
@@ -118,8 +77,7 @@ int main(void) {
 
 		play *p = calloc(1, sizeof(play));
 	
-		int j=0;
-		for (; j<5; ++j) {
+		for (int j=0; j<5; ++j) {
 			char c = buf[i+j];
 			switch (c) {
 			case 'T':
@@ -180,18 +138,18 @@ int main(void) {
 			}
 		}
 
-		i+=j+1; // +1 to skip space
+		i+=5+1; // +5 for hand, +1 to skip space
 
 		// extract bid
-		j=i; // store bid beginning idx
+		int bid_s=i; // store bid beginning idx
 		// find end of line
 		while(buf[i] != '\n' && buf[i] != EOF) {
 			++i;
 		}
-		char bid_str[i-j+1];
-		bid_str[i-j] = '\0';
-		for (int k=j; k<i; ++k) {
-			bid_str[k-j]=buf[k];
+		char bid_str[i-bid_s+1];
+		bid_str[i-bid_s] = '\0';
+		for (int k=bid_s; k<i; ++k) {
+			bid_str[k-bid_s]=buf[k];
 		}
 		p->bid = atoi(bid_str);
 
@@ -199,9 +157,37 @@ int main(void) {
 		ps[p->typ] = rank(ps[p->typ], p);
 	}
 
-	// play_print(ps);
-	printf("e%d: %llu\n", e+1, ex(ps));
-	play_free(ps);
+	// calculate winnings
+	int rank = 1;
+	int winnings = 0;
+	for (int i=0; i<7; ++i) {
+		play *ps_i = ps[i];
+		while (ps_i) {
+			int j=0;
+			winnings += rank * ps_i->bid;
+			++rank;
+			ps_i = ps_i->next;
+		}
+	}
 
+	play_free(ps);
+	return winnings;
+}
+
+
+
+int main(void) {
+	char *fname = "./inputs/d7.in";
+	FILE *fptr = fopen(fname, "r");
+	fseek(fptr, 0, SEEK_END);
+	long count = ftell(fptr);
+	rewind(fptr);
+	char buf[count*sizeof(char)+1]; // +1 for EOF
+	size_t read_bytes = fread(buf, sizeof(char), count, fptr);
+	fclose(fptr);
+	buf[count*sizeof(char)] = '\n'; // EOF->'\n'
+
+	for (int e=0; e<2; ++e){
+		printf("e%d: %llu\n", e+1, ex(buf, count, e));
 	}
 }
