@@ -3,19 +3,18 @@
 
 size_t LINE_LEN=0;
 
-	void print_grid(int grid[LINE_LEN][LINE_LEN]) {
-		for (int i=0; i<LINE_LEN; ++i) {
-			for (int j=0; j<LINE_LEN; ++j) {
-				printf("%d ", grid[i][j]);
-			}
-			putchar('\n');
+void print_grid(int grid[LINE_LEN][LINE_LEN]) {
+	for (int i=0; i<LINE_LEN; ++i) {
+		for (int j=0; j<LINE_LEN; ++j) {
+			printf("%d ", grid[i][j]);
 		}
-		printf("----------------------\n");
+		putchar('\n');
 	}
+	printf("----------------------\n");
+}
 
 
 int predict(int grid[LINE_LEN][LINE_LEN], int offset, int e) {
-	// print_grid(grid);
 	int zero_line = 1;
 	for (int j=0; j<LINE_LEN-offset-1; ++j) { // last elem has no further elems to diff with
 		int v = grid[offset][j+1] - grid[offset][j];
@@ -53,15 +52,14 @@ long ex(lex_token **tokens, size_t token_count, int e) {
 		++line_count;
 	}
 
-
 	int grid[LINE_LEN][LINE_LEN];
-	// zero
+	// zero grid
 	void zero(int grid[LINE_LEN][LINE_LEN]) {
-	for (int i=0; i<LINE_LEN; ++i) {
-		for (int j=0; j<LINE_LEN+1; ++j) {
-			grid[i][j] = 0;
+		for (int i=0; i<LINE_LEN; ++i) {
+			for (int j=0; j<LINE_LEN+1; ++j) {
+				grid[i][j] = 0;
+			}
 		}
-	}
 	}
 
 	long history = 0;
@@ -86,7 +84,6 @@ int main(void) {
 	FILE *fptr = fopen(fname, "r");
 	size_t token_count = 0;
 	lex_token **tokens = lex_tokenize(fptr, &token_count);
-
 
 	printf("e1: %ld\n", ex(tokens, token_count, 1));
 	printf("e2: %ld\n", ex(tokens, token_count, 2));
