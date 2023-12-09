@@ -35,6 +35,7 @@ void lex_free(lex_token **tokens, size_t n);
 void lex_string(lex_token *token);
 void lex_print(lex_token **token, int token_count);
 char *lex_bufferize(FILE *stream, size_t *buf_counter);
+lex_token **lex_tokenize_buf(char *buf, size_t buf_counter, size_t *token_counter);
 lex_token **lex_tokenize(FILE *stream, size_t *token_counter);
 
 #endif // LEX_H_
@@ -46,7 +47,8 @@ lex_token **lex_tokenize(FILE *stream, size_t *token_counter);
 
 #define LEX_SIZE 256*sizeof(char)
 char *LEX_FNAME = "stdin";
-int LEX_SKIP_WHITESPACE=0;
+int LEX_SKIP_WHITESPACE_CHAR=0;
+int LEX_SKIP_WHITESPACE_TOKEN=0;
 
 void lex_free(lex_token **tokens, size_t n) {
 	for (int i=0; i<n; ++i) {
@@ -77,7 +79,7 @@ char *lex_bufferize(FILE *stream, size_t *buf_counter) {
 		char c;
 		size_t i = 0;
 		while (c = fgetc(stream)) {
-			if (LEX_SKIP_WHITESPACE && (c == ' ' || c == '\t')) {
+			if (LEX_SKIP_WHITESPACE_CHAR && (c == ' ' || c == '\t')) {
 				continue;
 			}
 			buf[i] = c;
@@ -99,12 +101,10 @@ char *lex_bufferize(FILE *stream, size_t *buf_counter) {
 	return buf;		
 }
 
-lex_token **lex_tokenize(FILE *stream, size_t *token_counter) {
+lex_token **lex_tokenize_buf(char *buf, size_t buf_counter, size_t *token_counter) {
 	if (LEX_TOKEN_COUNT != sizeof(LEX_TOKEN_NAMES)/sizeof(*LEX_TOKEN_NAMES)) {
 		return NULL;
 	}
-	size_t buf_counter = 0;
-	char *buf = lex_bufferize(stream, &buf_counter);
 	if (buf == NULL) {
 		fprintf(stderr, "%s:%d: [ERROR]: lex_tokenize failed: lex_bufferize returned NULL buffer\n",__FILE__, __LINE__);
 		exit(1);
@@ -116,6 +116,9 @@ lex_token **lex_tokenize(FILE *stream, size_t *token_counter) {
 	size_t str_size = LEX_SIZE;
 	lex_token **tokens = calloc(buf_counter, sizeof(lex_token *));
 	for (int i = 0; i<buf_counter; ++i) {
+		if (LEX_SKIP_WHITESPACE_TOKEN && (buf[i] == ' ' || buf[i] == '\t')) {
+			continue;
+		}
 		lex_token *new = calloc(1, sizeof(lex_token));
 		char *val = calloc(str_size, sizeof(char));
 		new->fname = LEX_FNAME;
@@ -217,6 +220,16 @@ lex_token **lex_tokenize(FILE *stream, size_t *token_counter) {
 		++tok_count;
 	}
 	*token_counter = tok_count;
+	return tokens;
+}
+
+lex_token **lex_tokenize(FILE *stream, size_t *token_counter) {
+	if (LEX_TOKEN_COUNT != sizeof(LEX_TOKEN_NAMES)/sizeof(*LEX_TOKEN_NAMES)) {
+		return NULL;
+	}
+	size_t buf_counter = 0;
+	char *buf = lex_bufferize(stream, &buf_counter);
+	lex_token **tokens = lex_tokenize_buf(buf, buf_counter, token_counter);
 	free(buf);
 	return tokens;
 }

@@ -58,7 +58,7 @@ int main(void) {
 	for (int i=0; i<2; ++i) {
 		FILE *fptr = fopen(fname, "r");
 		size_t token_count = 0;
-		LEX_SKIP_WHITESPACE=i;
+		LEX_SKIP_WHITESPACE_CHAR=i;
 		lex_token **tokens = lex_tokenize(fptr, &token_count);
 		fclose(fptr);
 
