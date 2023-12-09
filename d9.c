@@ -14,7 +14,7 @@ size_t LINE_LEN=0;
 	}
 
 
-int predict(int grid[LINE_LEN][LINE_LEN], int offset) {
+int predict(int grid[LINE_LEN][LINE_LEN], int offset, int e) {
 	// print_grid(grid);
 	int zero_line = 1;
 	for (int j=0; j<LINE_LEN-offset-1; ++j) { // last elem has no further elems to diff with
@@ -25,13 +25,22 @@ int predict(int grid[LINE_LEN][LINE_LEN], int offset) {
 		}
 	}
 	// print_grid(grid);
-	if (zero_line) {
-		return grid[offset][LINE_LEN-offset-1];
+	int return_idx;
+	int direction;
+	if (e == 1) {
+		return_idx = LINE_LEN-offset-1;
+		direction = 1; // -> | extrapolating to right
+	} else if (e == 2) {
+		return_idx = 0;
+		direction = -1; // <- | extrapolating to left
 	}
-	return grid[offset][LINE_LEN-offset-1] + predict(grid, offset+1);
+	if (zero_line) {
+		return grid[offset][return_idx];
+	}
+	return grid[offset][return_idx] + direction * predict(grid, offset+1, e);
 }
 
-long e1(lex_token **tokens, size_t token_count) {
+long ex(lex_token **tokens, size_t token_count, int e) {
 	size_t line_count = 1; // read last line up front - don't have to handle EOF char then
 	
 	for (int i=0; i<token_count; ++i) {
@@ -63,7 +72,7 @@ long e1(lex_token **tokens, size_t token_count) {
 			int v = atoi(tokens[i*(LINE_LEN+1)+j]->v); // +1 to jump over newline char
 			grid[0][j] = v;
 		}
-		long pred = predict(grid, 0);
+		long pred = predict(grid, 0, e);
 		// printf("%d predict: %ld\n", i+1, pred);
 		history += pred;
 	}
@@ -79,7 +88,8 @@ int main(void) {
 	lex_token **tokens = lex_tokenize(fptr, &token_count);
 
 
-	printf("e1: %ld\n", e1(tokens, token_count));
+	printf("e1: %ld\n", ex(tokens, token_count, 1));
+	printf("e2: %ld\n", ex(tokens, token_count, 2));
 
 	// lex_print(tokens, token_count);
 	lex_free(tokens, token_count);
