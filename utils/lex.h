@@ -186,7 +186,8 @@ lex_token **lex_tokenize_buf(char *buf, size_t buf_counter, size_t *token_counte
 			vlen = j;
 			--i;
 			--col;
-		} else if (b_i >= '0' && b_i <= '9') { // handle int
+		} else if (b_i >= '0' && b_i <= '9' || // handle int
+			b_i == '-' && i+1<buf_counter && buf[i+1] >= '0' && buf[i+1] <= '9') { // handle neg int
 			new->t = LEX_INT;
 			++i;
 			++col;
