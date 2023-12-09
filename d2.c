@@ -125,7 +125,7 @@ int main(void) {
 			++nr_of_games;
 		}
 	}
-	printf("nr of games: %d\n", nr_of_games);
+	// printf("nr of games: %d\n", nr_of_games);
 	game gs[nr_of_games];
 	int offset = 0;
 	for (int i=0; i<nr_of_games; ++i) {
