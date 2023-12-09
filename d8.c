@@ -107,7 +107,7 @@ int main(void) {
 		for (int j=0; j<26; ++j) {
 			trie[i][j] = calloc(26, sizeof(node *));
 			for (int k=0; k<26; ++k) {
-				trie[i][j][k] = calloc(26, sizeof(node));
+				trie[i][j][k] = calloc(1, sizeof(node));
 			}
 		}
 	}
