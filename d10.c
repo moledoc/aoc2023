@@ -46,6 +46,31 @@ int e1(tile tiles[], tile cur, int came_from, int depth) {
 	}
 }
 
+int e2(tile tiles[], tile cur, int came_from, int depth) {
+	// printf("following tile:");
+	// print_tile(cur);
+	int res;
+	if (cur.c == 'S' && depth != 0) {
+		return depth/2+depth%2;
+	}
+	if (cur.c == '.') {
+		return 0;
+	}
+	if (cur.n != came_from && (res=e1(tiles, tiles[cur.n], cur.pos, depth+1))) {
+		return res;
+	}
+	if (cur.s != came_from && (res=e1(tiles, tiles[cur.s], cur.pos, depth+1))) {
+		return res;
+	}
+	if (cur.e != came_from && (res=e1(tiles, tiles[cur.e], cur.pos, depth+1))) {
+		return res;
+	}
+	if (cur.w != came_from && (res=e1(tiles, tiles[cur.w], cur.pos, depth+1))) {
+		return res;
+	}
+}
+
+
 int main(void) {
 	char *fname = "./inputs/d10.in";
 	FILE *fptr = fopen(fname, "r");
@@ -72,13 +97,16 @@ int main(void) {
 	for (int i=0; i<line_len+2; ++i) {
 		tile t1 = {'.', i}; // first row;
 		tile t2 = {'.', (line_count+1)*(line_len+2)+i}; // last row
-		tile c1 = {'.', i*(line_len+2)}; // first col;
-		tile c2 = {'.', i*(line_len+2)+line_len+1}; // last col;
 		tiles[i] = t1;
 		tiles[(line_count+1)*(line_len+2)+i] = t2;
+	}
+	for (int i=0; i<line_count+2; ++i) {
+		tile c1 = {'.', i*(line_len+2)}; // first col;
+		tile c2 = {'.', i*(line_len+2)+line_len+1}; // last col;
 		tiles[i*(line_len+2)] = c1;
 		tiles[i*(line_len+2)+line_len+1] = c2;
 	}
+
 	int i=0;
 	for (int row=1; row<line_count+1; ++row) { // offset to account for 'ground' buffer
 		for (int col=1; col<line_len+1; ++col) { // offset to account for 'ground' buffer
@@ -87,6 +115,7 @@ int main(void) {
 				++i;
 				b_i = buf[i];
 			}
+
 			int pos = row*(line_len+2)+col;
 			tile t = {b_i, pos};
 			switch (b_i) {
@@ -130,7 +159,7 @@ int main(void) {
 					((b_j=buf[j]) == '|' || b_j == 'L' || b_j == 'J')) {
 					t.s = t.pos+(line_len+2);
 				}
-				if ((j=i+1) >= 0 && 
+				if ((j=i+1) < size && 
 					((b_j=buf[j]) == '-' || b_j == '7' || b_j == 'J')) {
 					t.e = t.pos+1;
 				}
@@ -147,10 +176,10 @@ int main(void) {
 
 	// print tiles
 	// print_tiles(tiles, line_count, line_len);
-	// return 0;
 
 	// printf("start: ");
 	// print_tile(tiles[cur]);
 	
 	printf("e1: %d\n", e1(tiles, tiles[cur], cur, 0));	
+//	printf("e2: %d\n", e2(tiles, tiles[cur], cur, 0));	
 }
