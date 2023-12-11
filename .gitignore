@@ -1,4 +1,3 @@
 a.out
 *.sample
-e1.in
-e2.in
+e*.in

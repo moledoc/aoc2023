@@ -17,9 +17,9 @@ void print_tile(tile t) {
 }
 
 void print_tiles(tile tiles[], int line_count, int line_len) {
-	for (int row=0; row<line_count+2; ++row) {
-		for (int col=0; col<line_len+2; ++col) {
-			int pos = row*(line_len+2)+col;
+	for (int row=0; row<line_count; ++row) {
+		for (int col=0; col<line_len; ++col) {
+			int pos = row*(line_len)+col;
 			print_tile(tiles[pos]);
 		}
 	}
@@ -27,10 +27,10 @@ void print_tiles(tile tiles[], int line_count, int line_len) {
 
 void print_grid(tile tiles[], int line_count, int line_len) {
 	int in_loop = 0;
-	for (int row=0; row<line_count+2; ++row) {
-		for (int col=0; col<line_len+2; ++col) {
-			int pos = row*(line_len+2)+col;
-			if (tiles[pos].c == '.' && tiles[pos].in) {
+	for (int row=0; row<line_count; ++row) {
+		for (int col=0; col<line_len; ++col) {
+			int pos = row*line_len+col;
+			if (tiles[pos].in) {
 				printf("*");
 			} else if (tiles[pos].c == '.' && !tiles[pos].in) {
 				printf("0");
@@ -43,10 +43,10 @@ void print_grid(tile tiles[], int line_count, int line_len) {
 }
 int how_many_in_loop(tile tiles[], int line_count, int line_len) {
 	int in_loop = 0;
-	for (int row=0; row<line_count+2; ++row) {
-		for (int col=0; col<line_len+2; ++col) {
-			int pos = row*(line_len+2)+col;
-			if (tiles[pos].c == '.' && tiles[pos].in) {
+	for (int row=0; row<line_count; ++row) {
+		for (int col=0; col<line_len; ++col) {
+			int pos = row*line_len+col;
+			if (tiles[pos].in) {
 				++in_loop;
 			}
 		}
@@ -63,7 +63,7 @@ int e1(tile tiles[], tile cur, int came_from, int depth) {
 		return 0;
 	}
 	tiles[cur.pos].is_pipe = 1;
-	tiles[cur.pos].in = 1;
+	tiles[cur.pos].in = 0;
 	if (cur.n != came_from && (res=e1(tiles, tiles[cur.n], cur.pos, depth+1))) {
 		return res;
 	}
@@ -79,53 +79,51 @@ int e1(tile tiles[], tile cur, int came_from, int depth) {
 }
 
 
-void unfill(tile tiles[], int line_count, int line_len, int row, int col, int r_dir, int c_dir) {
-	if (row < 0 || row > line_count+1 || col < 0 || col > line_len+1) {
+void unfill(tile tiles[], int line_count, int line_len, int row, int col) {
+	if (row < 0 || row > line_count || col < 0 || col > line_len) {
 		return;
 	}
-	// printf("HERE: %d, %d\n", row, col);
-	tile t = tiles[row*(line_len+2)+col];
+	tile t = tiles[row*line_len+col];
 	if (t.visited==1) {
 		return;
 	}
-	tiles[row*(line_len+2)+col].visited=1;
-	// print_tile(t);
+	tiles[row*line_len+col].visited=1;
 	if (t.is_pipe) {
+		tiles[row*line_len+col].in = 0;
 		return;
 	}
-	tiles[row*(line_len+2)+col].in = 0;
-	unfill(tiles, line_count, line_len, row, col+c_dir, r_dir, c_dir);
-	unfill(tiles, line_count, line_len, row+r_dir, col, r_dir,c_dir);
-	unfill(tiles, line_count, line_len, row-r_dir, col, r_dir, c_dir);
-	unfill(tiles, line_count, line_len, row, col-c_dir, r_dir,c_dir);
+	tiles[row*line_len+col].in = 0;
+	unfill(tiles, line_count, line_len, row, col+1);
+	unfill(tiles, line_count, line_len, row+1, col);
+	unfill(tiles, line_count, line_len, row-1, col);
+	unfill(tiles, line_count, line_len, row, col-1);
 }
 
 // TODO add buffer around pipe that is 'not in' by default
 // then when doing flood fill from the outside, we can capture 'squeezed' dots + buffer dots are not counted 'in', since other dots are by default 'in' and then marked as 'not in'
 
-void explode(tile exploded_tiles[], tile tiles[], int line_count, int line_len, int depth) {
-	for (int i=0; i<2*line_count*(line_len+2+depth*2); ++i) {
+void explode(tile exploded_tiles[], int explode_size, tile tiles[], int line_count, int line_len) {
+	for (int i=0; i<explode_size; ++i) {
 		tile t = {'.', i, 0, 0, 0, 0, 0, 0};
 		exploded_tiles[i] = t;
 	}
 	int row_offset = 0;
-	for (int row=1; row<line_count+2; ++row) {
+	for (int row=1; row<line_count; ++row) {
 		int col_offset = 0;
-		for (int col=1; col<line_len+2; ++col) {
-			int pos = (row+row_offset)*(line_len+2+depth*2)+col+col_offset;
-			tile t = tiles[row*(line_len+2)+col];
-			t.pos = pos;
+		for (int col=1; col<line_len; ++col) {
+			int pos = (row+row_offset)*(2*line_len)+col+col_offset;
+			tile t = tiles[row*line_len+col];
 			exploded_tiles[pos] = t;
 			++col_offset;
-			if (t.c == 'S' && t.e || t.c == '-' || t.c == 'F' || t.c == 'L') {
+			if (t.is_pipe && (t.c == 'S' && t.e || t.c == '-' || t.c == 'F' || t.c == 'L')) {
 				tile tt = {'-', pos+1, 0, 0, pos, pos+2, 0, 0, 1};
+				tt.is_pipe = 1;
 				exploded_tiles[pos+1] = tt;
-				tt.is_pipe = 1;
 			}
-			if (t.c == 'S' && t.s || t.c == '|' || t.c == 'F' || t.c == '7') {
-				tile tt = {'|', pos+line_len+2+depth*2, 0, 0, pos, pos+2*(line_len+2+depth*2), 0, 1};
+			if (t.is_pipe && (t.c == 'S' && t.s || t.c == '|' || t.c == 'F' || t.c == '7')) {
+				tile tt = {'|', pos+2*line_len, 0, 0, pos, pos+2*(2*line_len), 0, 1};
 				tt.is_pipe = 1;
-				exploded_tiles[pos+line_len+2+depth*2] = tt;
+				exploded_tiles[pos+2*line_len] = tt;
 			}
 		}
 		row_offset+=1;
@@ -133,29 +131,29 @@ void explode(tile exploded_tiles[], tile tiles[], int line_count, int line_len, 
 }
 
 int e2(tile tiles[], int line_count, int line_len, tile cur) {
-	int depth = e1(tiles, cur, cur.pos, 0);
-	// printf("DEPTH=:%d, line_len+2:%d\n", depth, line_len+2);
+	e1(tiles, cur, cur.pos, 0);
 
-	tile exploded_tiles[2*line_count*(line_len+2+depth*2)];
-	explode(exploded_tiles, tiles, line_count, line_len, depth);
-	// print_grid(exploded_tiles, 2*line_count-2, line_len+2+depth*2-2);
+	int exploded_count = 2*(line_count+2);
+	int exploded_len = 2*(line_len+2);
 
-	// print_grid(exploded_tiles, 2*line_count-2, line_len+2+depth*2-2);
-	unfill(exploded_tiles, 2*line_count-2, line_len+2+depth*2-2, 0, 0, 1, 1);
-	unfill(exploded_tiles, 2*line_count-2, line_len+2+depth*2-2, 2*line_count-1, 0, -1, 1);
-	unfill(exploded_tiles, 2*line_count-2, line_len+2+depth*2-2, 0, line_len+2+depth*2-1, 1, -1);
-	unfill(exploded_tiles, 2*line_count-2, line_len+2+depth*2-2, 2*line_count-1, line_len+2+depth*2-1, -1,-1);
+	tile exploded_tiles[exploded_count*exploded_len];
+	explode(exploded_tiles, exploded_count*exploded_len, tiles, line_count+2, line_len+2);
 
-	// printf("-----------------------------------\n");
-	// print_grid(exploded_tiles, 2*line_count-2, line_len+2+depth*2-2);
-	int in_loop = how_many_in_loop(exploded_tiles, 2*line_count-2, line_len+2+depth*2-2);
+	print_grid(exploded_tiles, 2*(line_count+2), exploded_len);
+
+	printf("HEERE:%d<-%d %d\n", exploded_count, line_count, exploded_len);
+	unfill(exploded_tiles, 2*(line_count+2), exploded_len, 0, 0);
+	printf("HEERE:%d<-%d %d\n", exploded_count, line_count, exploded_len);
+
+	print_grid(exploded_tiles, 2*(line_count+2), exploded_len);
+	int in_loop = how_many_in_loop(exploded_tiles, 2*(line_count+2), exploded_len);
 
 	return in_loop;
 }
 
 
 int main(void) {
-	char *fname = "./inputs/e1.in";
+	char *fname = "./inputs/d10.in";
 	FILE *fptr = fopen(fname, "r");
 	fseek(fptr, 0, SEEK_END);
 	long size = ftell(fptr);
@@ -256,8 +254,6 @@ int main(void) {
 					t.w = t.pos-1;
 					in_col = t.w;
 				}
-				// in_row=row;
-				// in_col=col;
 				break;
 			}
 			++i;
@@ -266,7 +262,7 @@ int main(void) {
 	}
 
 	// print tiles
-	// print_tiles(tiles, line_count, line_len);
+	// print_tiles(tiles, line_count+2, line_len+2);
 
 	// printf("start: ");
 	// print_tile(tiles[cur]);
