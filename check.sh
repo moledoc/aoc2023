@@ -12,3 +12,4 @@ time cc d07.c && ./a.out
 time cc d08.c && ./a.out
 time cc d09.c && ./a.out
 time cc d10.c && ./a.out
+time cc d11.c && ./a.out
