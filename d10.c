@@ -1,5 +1,7 @@
 #include <stdio.h>
 
+// NOTE: 1D array can cause some mind gymnastics
+
 typedef struct {
 	char c; // tile char
 	int pos; // cur idx
@@ -7,7 +9,7 @@ typedef struct {
 	int s; // south
 	int w; // west
 	int e; // east
-	int in; // in loop - default 1 to do flood fill on the outside
+	int in; // in loop - default 1 so flood filling can un-'in' the outside
 	int is_pipe;
 	int visited;
 } tile;
@@ -23,35 +25,6 @@ void print_tiles(tile tiles[], int line_count, int line_len) {
 			print_tile(tiles[pos]);
 		}
 	}
-}
-
-void print_grid(tile tiles[], int line_count, int line_len) {
-	int in_loop = 0;
-	for (int row=0; row<line_count; ++row) {
-		for (int col=0; col<line_len; ++col) {
-			int pos = row*line_len+col;
-			if (tiles[pos].in) {
-				printf("*");
-			} else if (tiles[pos].c == '.' && !tiles[pos].in) {
-				printf("0");
-			} else {
-				printf("%c", tiles[pos].c);
-			}
-		}
-		putchar('\n');
-	}
-}
-int how_many_in_loop(tile tiles[], int line_count, int line_len) {
-	int in_loop = 0;
-	for (int row=0; row<line_count; ++row) {
-		for (int col=0; col<line_len; ++col) {
-			int pos = row*line_len+col;
-			if (tiles[pos].in) {
-				++in_loop;
-			}
-		}
-	}
-	return in_loop;
 }
 
 int e1(tile tiles[], tile cur, int came_from, int depth) {
@@ -79,7 +52,37 @@ int e1(tile tiles[], tile cur, int came_from, int depth) {
 }
 
 
-void unfill(tile tiles[], int line_count, int line_len, int row, int col) {
+void print_grid(tile tiles[], int line_count, int line_len) {
+	int in_loop = 0;
+	for (int row=0; row<line_count; ++row) {
+		for (int col=0; col<line_len; ++col) {
+			int pos = row*line_len+col;
+			if (tiles[pos].in) {
+				printf("*");
+			} else if (tiles[pos].c == '.' && !tiles[pos].in) {
+				printf("0");
+			} else {
+				printf("%c", tiles[pos].c);
+			}
+		}
+		putchar('\n');
+	}
+}
+
+int how_many_in_loop(tile tiles[], int line_count, int line_len) {
+	int in_loop = 0;
+	for (int row=0; row<line_count; ++row) {
+		for (int col=0; col<line_len; ++col) {
+			int pos = row*line_len+col;
+			if (tiles[pos].in) {
+				++in_loop;
+			}
+		}
+	}
+	return in_loop;
+}
+
+void un_in(tile tiles[], int line_count, int line_len, int row, int col) {
 	if (row < 0 || row > line_count || col < 0 || col > line_len) {
 		return;
 	}
@@ -93,20 +96,18 @@ void unfill(tile tiles[], int line_count, int line_len, int row, int col) {
 		return;
 	}
 	tiles[row*line_len+col].in = 0;
-	unfill(tiles, line_count, line_len, row, col+1);
-	unfill(tiles, line_count, line_len, row+1, col);
-	unfill(tiles, line_count, line_len, row-1, col);
-	unfill(tiles, line_count, line_len, row, col-1);
+	un_in(tiles, line_count, line_len, row, col+1);
+	un_in(tiles, line_count, line_len, row+1, col);
+	un_in(tiles, line_count, line_len, row-1, col);
+	un_in(tiles, line_count, line_len, row, col-1);
 }
-
-// TODO add buffer around pipe that is 'not in' by default
-// then when doing flood fill from the outside, we can capture 'squeezed' dots + buffer dots are not counted 'in', since other dots are by default 'in' and then marked as 'not in'
 
 void explode(tile exploded_tiles[], int explode_size, tile tiles[], int line_count, int line_len) {
 	for (int i=0; i<explode_size; ++i) {
-		tile t = {'.', i, 0, 0, 0, 0, 0, 0};
+		tile t = {'.', i, 0, 0, 0, 0, 0, 0}; // make buffer grass, that is not 'in', because this will be added inside loop as well
 		exploded_tiles[i] = t;
 	}
+	// explode the loop and fill the gaps with filler pipe
 	int row_offset = 0;
 	for (int row=1; row<line_count; ++row) {
 		int col_offset = 0;
@@ -130,8 +131,10 @@ void explode(tile exploded_tiles[], int explode_size, tile tiles[], int line_cou
 	}
 }
 
+// Add buffer around pipe that is 'not in' by default/explode the pipes out.
+// Then when doing flood fill from the outside, we can un-'in the 'squeezed' dots, because the 'squeeze' becomes a regular step.
 int e2(tile tiles[], int line_count, int line_len, tile cur) {
-	e1(tiles, cur, cur.pos, 0);
+	e1(tiles, cur, cur.pos, 0); // make sure tiles are properly filled
 
 	int exploded_count = 2*(line_count+2);
 	int exploded_len = 2*(line_len+2);
@@ -139,13 +142,12 @@ int e2(tile tiles[], int line_count, int line_len, tile cur) {
 	tile exploded_tiles[exploded_count*exploded_len];
 	explode(exploded_tiles, exploded_count*exploded_len, tiles, line_count+2, line_len+2);
 
-	print_grid(exploded_tiles, 2*(line_count+2), exploded_len);
+	// BUG: for some reason calling unfill sets the exploded_count to 0. So using the calculation instead.
 
-	printf("HEERE:%d<-%d %d\n", exploded_count, line_count, exploded_len);
-	unfill(exploded_tiles, 2*(line_count+2), exploded_len, 0, 0);
-	printf("HEERE:%d<-%d %d\n", exploded_count, line_count, exploded_len);
+	// print_grid(exploded_tiles, 2*(line_count+2), exploded_len);
+	un_in(exploded_tiles, 2*(line_count+2), exploded_len, 0, 0);
 
-	print_grid(exploded_tiles, 2*(line_count+2), exploded_len);
+	// print_grid(exploded_tiles, 2*(line_count+2), exploded_len);
 	int in_loop = how_many_in_loop(exploded_tiles, 2*(line_count+2), exploded_len);
 
 	return in_loop;
@@ -176,7 +178,7 @@ int main(void) {
 	int cur; // populate with starting position index
 	int in_row;
 	int in_col;
-	// fill tiles
+	// fill tiles - all grass tiles are 'in' by default
 	for (int i=0; i<line_len+2; ++i) {
 		tile t1 = {'.', i, 0, 0, 0, 0, 1}; // first row;
 		tile t2 = {'.', (line_count+1)*(line_len+2)+i, 0, 0, 0, 0, 1}; // last row
@@ -200,7 +202,7 @@ int main(void) {
 			}
 
 			int pos = row*(line_len+2)+col;
-			tile t = {b_i, pos, 0, 0, 0, 0, 1};
+			tile t = {b_i, pos, 0, 0, 0, 0, 1}; // tile is in by default
 			switch (b_i) {
 			// mark the idx where the pipes directs to
 			case '|':
@@ -261,13 +263,6 @@ int main(void) {
 		}
 	}
 
-	// print tiles
-	// print_tiles(tiles, line_count+2, line_len+2);
-
-	// printf("start: ");
-	// print_tile(tiles[cur]);
-	
 	printf("e1: %d\n", e1(tiles, tiles[cur], cur, 0));
-	// printf("start -- in_row: %d, in_col: %d\n", in_row, in_col);
 	printf("e2: %d\n", e2(tiles, line_count, line_len, tiles[cur]));
 }
