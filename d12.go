@@ -92,18 +92,20 @@ func walk(cond []byte, csize int, coffset int, grps []int, gsize int, goffset in
 				return 0
 			}
 		}
-		//fmt.Println("returning success 1:", string(cond), grps, gsize, seen, goffset, coffset)
+		// fmt.Println("returning success 1:", string(cond), grps, gsize, seen, goffset, coffset)
  		return 1
 	}
 
-	for i, s := range seen {
-		if s > grps[i] {
-			return 0
-		}
-		if s == 0 {
-			break
-		}
-	}
+// 	for i, s := range seen {
+// 		break
+// 		if s > grps[i] {
+// 			// fmt.Println("returning failure 1:", string(cond), csize, grps, gsize, seen, goffset)
+// 			return 0
+// 		}
+// 		if s == 0 {
+// 			break
+// 		}
+// 	}
 
 	switch cond[coffset] {
 	case '?':
@@ -117,7 +119,7 @@ func walk(cond []byte, csize int, coffset int, grps []int, gsize int, goffset in
 	case '.':
 		if coffset > 0 && cond[coffset-1] == '#' {
 			if goffset < gsize && grps[goffset] != seen[goffset] {
-				//fmt.Println("returning failure 0:", string(cond), grps, gsize, seen, goffset)
+				// fmt.Println("returning failure 0:", string(cond), grps, gsize, seen, goffset)
 				return 0
 			}
 			return walk(cond, csize, coffset+1, grps, gsize, goffset+1, seen)
@@ -144,19 +146,30 @@ func ex(repeat int) int {
 	for _, line := range lines {
 		elems := bytes.Split(line, []byte(" "))
 		nrbs := bytes.Split(elems[1], []byte(","))
-		csize := len(elems[0])
-		cond := make([]byte, csize*repeat)
+		lElems0 := len(elems[0])
+		csize := lElems0*repeat+(repeat-1)
+		cond := make([]byte, csize)
 		copy(cond, elems[0])
-		gsize := len(nrbs)
+		for j:=1;j<repeat; j++ {
+			cond[lElems0*j+j-1] = '?'
+			for k:=0; k<lElems0; k++ {
+				cond[lElems0*j+j+k] = elems[0][k]
+			}
+		}
+		lNrbs := len(nrbs)
+		gsize := lNrbs*repeat
 		grps := make([]int, gsize)
 		seen := make([]int, gsize)
 		gsum := 0
 		for i, nr := range nrbs {
 			grps[i], _ = strconv.Atoi(string(nr))
-			gsum += grps[i]
+			for j:=1; j<repeat; j++ {
+				grps[lNrbs*j+i]=grps[i]
+			}
+			gsum += grps[i]*repeat
 		}
-		// fmt.Println(grps, nsum, seen)
-		arrangements += walk(elems[0], len(elems[0]), 0, grps, gsize, 0, seen)
+		fmt.Println(string(cond), grps)
+		arrangements += walk(cond, csize, 0, grps, gsize, 0, seen)
 		// break
 	}
 	return arrangements
@@ -164,6 +177,6 @@ func ex(repeat int) int {
 
 
 func main() {
-	fmt.Printf("ex1: %v\n", ex(1))
-	fmt.Printf("e1: %v\n", e1())
+	fmt.Printf("ex1: %v\n", ex(5))
+	// fmt.Printf("e1: %v\n", e1())
 }
