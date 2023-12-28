@@ -15,6 +15,9 @@ void parr(char arr[], size_t size) {
 
 void pdarr(int arr[], size_t size) {
 	for (int i=0; i<size; ++i) {
+		if (arr[i] < 0) {
+			break;
+		}
 		printf("%d ", arr[i]);
 	}
 	putchar('\n');
@@ -62,7 +65,7 @@ int reflecto(int arr[], size_t len, int *offset) {
 	return rpoint;
 }
 
-int e1(char buf[], size_t size) {
+int e1_0(char buf[], size_t size) {
 	int rs = 0;
 	int cs = 0;
 	int pat_start = 0;
@@ -127,6 +130,124 @@ int e1(char buf[], size_t size) {
 	return 100*rs+cs;
 }
 
+
+void pat_zero(int patterns[100][20][20]) {
+	for (int p=0; p<100; ++p) {
+		for (int r=0; r<20; ++r) {
+			for (int c=0; c<20; ++c) {
+				patterns[p][r][c]=-1;
+			}
+		}
+	}
+}
+
+void pat_print(int pat[20][20]) {
+	for (int r=0; r<20; ++r) {
+		for (int c=0; c<20; ++c) {
+			if (pat[r][c] < 0) {
+				break;
+			}
+			putchar('0'+pat[r][c]);
+		}
+		if (pat[r][0] < 0) {
+			break;
+		}
+		putchar('\n');
+	}
+	if (pat[0][0] < 0) {
+		return;
+	}
+	putchar('\n');
+}
+
+void pats_print(int pats[100][20][20]) {
+	for (int p=0; p<100; ++p) {
+		pat_print(pats[p]);
+	}
+}
+
+// reverse binary to decimal
+unsigned long decimal(int arr[], size_t size) {
+	unsigned long dec = 0;
+	for (int i=1; i<size; ++i) {
+		if (arr[i] < 0) {
+			break;
+		}
+		dec += arr[i] << i;
+	}
+	if (arr[0] < 0) {
+		return dec;
+	}
+	dec += arr[0];
+// 	printf("%d: ", dec);
+// 	pdarr(arr, size);
+	return dec;
+}
+
+int ref_point(int pat[20][20]) {
+
+	// find all possible midpoints and bounds
+	// check for perf reflection && count rows
+
+	int mid_pts[5];
+	zarr((char *)mid_pts, 5);		
+	int bounds[5];
+	zarr((char*)bounds, 5);
+	int cnt = 0;
+
+	int rows = 0;
+	for (; rows<20; ++rows) {
+		if (pat[rows][0] < 0) {
+			break;
+		}
+	}
+
+	int prev = 0;
+	for (int r=0; r<20; ++r) {
+		int cur = decimal(pat[r], 20);
+		if (!cur) {
+			break;
+		}
+		if (!prev) {
+			prev = cur;
+			continue;
+		}
+			
+		if (cur == prev) {
+			mid_pts[cnt] = r;
+			bounds[cnt] = min(r, rows-r);
+			++cnt;
+		}
+		prev = cur;
+	}
+	// pat_print(pat);
+
+	for (int c=0; c<cnt; ++c) {
+		int ref = 1;
+		for (int b=1; b<bounds[c]; ++b) {
+			if (decimal(pat[mid_pts[c]-1-b],20) != decimal(pat[mid_pts[c]+b],20)) {
+	//	printf("%d %d %d %d\n", bounds[c], mid_pts[c], decimal(pat[mid_pts[c]-1-b],20), decimal(pat[mid_pts[c]+b],20));
+				ref=0;
+				break;
+			}
+		}
+		if (ref && bounds[c]) { // if bounds is 0, then it's not a valid reflection
+			return mid_pts[c];
+		}
+	}
+	return 0;
+}
+
+int e1(int A[100][20][20], int AT[100][20][20]) {
+	int rs = 0;
+	int cs = 0;
+	for (int p=0; p<100; ++p) {
+		rs += ref_point(A[p]);
+		cs += ref_point(AT[p]);
+	}
+	return 100*rs + cs;
+}
+
 int main(void) {
 	char *fname = "./inputs/d13.in";
 	FILE *fptr = fopen(fname, "r");
@@ -138,16 +259,38 @@ int main(void) {
 	fread(buf, sizeof(char), size, fptr);
 	fclose(fptr);
 
+	int A[100][20][20]; // 100 patterns, max cols=18; max rows=17;
+	int AT[100][20][20];
+	pat_zero(A);
+	pat_zero(AT);
+	int pat_cnt = 0;
+	int row_cnt = 0;
+	int col_cnt = 0;
 	for (int i=0; i<size; ++i) {
 		switch (buf[i]) {
-		case '.':
-			buf[i]='0'; break;
-		case '#':
-			buf[i]='1'; break;
+			case '.': {
+				A[pat_cnt][row_cnt][col_cnt]=0;
+				AT[pat_cnt][col_cnt][row_cnt]=0;
+				++col_cnt;
+			} break;
+			case '#': {
+				A[pat_cnt][row_cnt][col_cnt]=1;
+				AT[pat_cnt][col_cnt][row_cnt]=1;
+				++col_cnt;
+			} break;
+			case '\n': {
+				if (buf[i-1] == '\n') {
+					++pat_cnt;
+					row_cnt = 0;
+					col_cnt = 0;
+				} else {
+					++row_cnt;
+					col_cnt=0;
+				}
+			} break;	
 		}
 	}
 
-
-	printf("e1: %d\n", e1(buf, size));
+	printf("e1: %d\n", e1(A, AT));
 
 }
